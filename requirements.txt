@@ -1,0 +1,2 @@
+# Tidak ada library eksternal.
+# Program menggunakan Python Standard Library.
