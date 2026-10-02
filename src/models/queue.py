@@ -1,8 +1,11 @@
+from collections import deque
+
+
 class Queue:
-    """Queue dengan prinsip FIFO."""
+    """Queue dengan prinsip FIFO menggunakan collections.deque."""
 
     def __init__(self):
-        self.data = []
+        self.data = deque()
 
     def enqueue(self, data):
         self.data.append(data)
@@ -10,7 +13,7 @@ class Queue:
     def dequeue(self):
         if len(self.data) == 0:
             return None
-        return self.data.pop(0)
+        return self.data.popleft()
 
     def peek(self):
         if len(self.data) == 0:
@@ -26,3 +29,6 @@ class Queue:
             return
 
         print("Antrean:", " <- ".join(str(item) for item in self.data))
+
+    def __len__(self):
+        return len(self.data)

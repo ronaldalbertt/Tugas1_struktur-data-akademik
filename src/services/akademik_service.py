@@ -1,4 +1,5 @@
 from src.models.array import Array
+from src.models.hash_table import HashTable
 from src.models.linked_list import LinkedList
 from src.models.queue import Queue
 from src.models.stack import Stack
@@ -9,6 +10,7 @@ class AkademikService:
     def __init__(self, nama_file):
         self.array_mahasiswa = Array()
         self.linked_list_mahasiswa = LinkedList()
+        self.indeks_nim = HashTable()
         self.undo_stack = Stack()
         self.antrean = Queue()
 
@@ -21,9 +23,10 @@ class AkademikService:
         for mahasiswa in data_mahasiswa:
             self.array_mahasiswa.add_last(mahasiswa)
             self.linked_list_mahasiswa.add_last(mahasiswa)
+            self.indeks_nim.put(mahasiswa.nim, mahasiswa)
 
     def tampilkan_mahasiswa(self):
-        print("\n=== DATA MAHASISWA (ARRAY/LIST) ===")
+        print("\n=== DATA MAHASISWA (ARRAY) ===")
         self.array_mahasiswa.display()
 
     def tambah_mahasiswa_dari_input(self):
@@ -44,10 +47,17 @@ class AkademikService:
             print("IPK harus berupa angka.")
             return
 
+        if ipk < 0 or ipk > 4:
+            print("IPK harus berada pada rentang 0 sampai 4.")
+            return
+
         self.tambah_mahasiswa(nim, nama, prodi, ipk)
 
     def tambah_mahasiswa(self, nim, nama, prodi, ipk):
-        # Menambah data pada Array dan Linked List.
+        if self.indeks_nim.contains(nim):
+            print("NIM sudah terdaftar.")
+            return
+
         indeks_baru = len(self.array_mahasiswa) + 1
         mahasiswa_baru = self._buat_mahasiswa(
             indeks_baru, nim, nama, prodi, ipk
@@ -55,11 +65,11 @@ class AkademikService:
 
         self.array_mahasiswa.add_last(mahasiswa_baru)
         self.linked_list_mahasiswa.add_last(mahasiswa_baru)
+        self.indeks_nim.put(nim, mahasiswa_baru)
 
-        # Stack menyimpan operasi terakhir untuk fitur Undo.
         self.undo_stack.push({
             "aksi": "tambah",
-            "nim": nim
+            "nim": nim,
         })
 
         print("Mahasiswa berhasil ditambahkan.")
@@ -75,28 +85,29 @@ class AkademikService:
 
         if operasi["aksi"] == "tambah":
             nim = operasi["nim"]
+            mahasiswa = self.indeks_nim.get(nim)
+
+            if mahasiswa is None:
+                print("Data untuk undo tidak ditemukan.")
+                return
 
             index = self.array_mahasiswa.find_nim(nim)
+            self.array_mahasiswa.remove_at(index)
+            self.linked_list_mahasiswa.remove_at(index)
+            self.indeks_nim.remove(nim)
 
-            if index != -1:
-                self.array_mahasiswa.remove_at(index)
-                self.linked_list_mahasiswa.remove_at(index)
-                print(f"Undo berhasil: data NIM {nim} dihapus kembali.")
-            else:
-                print("Data untuk undo tidak ditemukan.")
+            print(f"Undo berhasil: data NIM {nim} dihapus kembali.")
 
     def tambah_ke_antrean_dari_input(self):
         print("\n=== TAMBAH KE ANTREAN ===")
 
         nim = input("Masukkan NIM mahasiswa: ").strip()
+        mahasiswa = self.indeks_nim.get(nim)
 
-        index = self.array_mahasiswa.find_nim(nim)
-
-        if index == -1:
+        if mahasiswa is None:
             print("Mahasiswa tidak ditemukan.")
             return
 
-        mahasiswa = self.array_mahasiswa.at(index)
         self.antrean.enqueue(mahasiswa)
 
         print(f"{mahasiswa.nama} masuk ke antrean.")
@@ -113,26 +124,21 @@ class AkademikService:
 
         print("Mahasiswa yang diproses:")
         mahasiswa.info()
-
         self.antrean.display()
 
     def cari_mahasiswa_dari_input(self):
         print("\n=== CARI MAHASISWA BERDASARKAN NIM ===")
 
         nim = input("Masukkan NIM: ").strip()
+        mahasiswa = self.indeks_nim.get(nim)
 
-        # Pencarian menggunakan Linked List.
-        index = self.linked_list_mahasiswa.find_nim(nim)
-
-        if index == -1:
+        if mahasiswa is None:
             print("Mahasiswa tidak ditemukan.")
             return
 
-        mahasiswa = self.linked_list_mahasiswa.at(index)
-
         print("Data ditemukan:")
         mahasiswa.info()
-        print("Index Linked List:", index)
+        print("Pencarian menggunakan Hash Table: rata-rata O(1), worst case O(n)")
 
     @staticmethod
     def _buat_mahasiswa(indeks, nim, nama, prodi, ipk):
